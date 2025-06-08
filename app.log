@@ -1,0 +1,19 @@
+16:53:00 [INFO] Starting SystemTray Client
+16:53:00 [INFO] Starting Application
+16:53:00 [INFO] Updating Client Items
+16:53:00 [INFO] Updating Client Items
+16:53:00 [INFO] Updating Client Items
+16:53:00 [INFO] Updating Client Items
+16:53:00 [INFO] Updating Client Items
+16:53:00 [INFO] Updating Client Items
+16:53:05 [DEBUG] (1) ttray::app: MenuItem { address: ":1.16382", menu_path: "/org/blueman/sni/menu", submenu_id: 65536 }
+16:53:05 [INFO] Updating Client Items
+16:53:05 [INFO] Updating Client Items
+16:53:05 [INFO] Updating Client Items
+16:53:05 [INFO] Updating Client Items
+16:53:05 [INFO] Updating Client Items
+16:53:05 [INFO] Updating Client Items
+16:53:06 [DEBUG] (1) ttray::app: MenuItem { address: ":1.16382", menu_path: "/org/blueman/sni/menu", submenu_id: 65536 }
+16:53:06 [INFO] Updating Client Items
+16:53:06 [INFO] Updating Client Items
+16:53:06 [INFO] Updating Client Items
