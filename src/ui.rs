@@ -1,8 +1,7 @@
 use ratatui::{
     Frame,
-    layout::{Constraint, Layout},
-    style::{Color, Style},
-    widgets::{List, ListState},
+    layout::Layout,
+    widgets::{Block, List, ListState},
 };
 use system_tray::menu::MenuItem;
 use tui_tree_widget::{Tree, TreeItem};
@@ -12,24 +11,46 @@ use crate::app::App;
 impl App {
     pub fn render(&mut self, frame: &mut Frame) {
         let layout = Layout::new(
-            ratatui::layout::Direction::Horizontal,
-            [Constraint::Percentage(30), Constraint::Fill(1)],
+            self.config.direction,
+            &[self.config.constraints.0, self.config.constraints.1],
         )
         .split(frame.area());
 
-        let list = List::new(self.get_titles())
-            .highlight_style(Style::default().bg(Color::Blue).fg(Color::Black));
         let mut list_state = ListState::default();
         list_state.select(Some(self.app_index));
+
+        let mut list = List::new(self.get_titles())
+            .style(self.config.regular_style.0)
+            .highlight_style(self.config.selected_style.0);
+        if let Some(border_type) = self.config.border_type.0 {
+            list = list.block(
+                Block::new()
+                    .borders(self.config.border.0)
+                    .border_type(border_type),
+            );
+        }
+
         frame.render_stateful_widget(list, layout[0], &mut list_state);
 
-        if let Some(menu) = self.get_selected_menu() {
-            let tree_items = menu_items_to_tree_items(&menu.submenus);
-            if let Ok(mut tree) = Tree::new(&tree_items) {
-                tree = tree.highlight_style(Style::default().bg(Color::Blue).fg(Color::Black));
-                frame.render_stateful_widget(tree, layout[1], &mut self.actions_state);
-            }
+        let maybe_menu = self.get_selected_menu();
+        let tree_items = maybe_menu
+            .as_ref()
+            .map(|menu| menu_items_to_tree_items(&menu.submenus))
+            .unwrap_or_else(Vec::new);
+
+        let mut tree = Tree::new(&tree_items)
+            .unwrap()
+            .style(self.config.regular_style.1)
+            .highlight_style(self.config.selected_style.1);
+        if let Some(border_type) = self.config.border_type.1 {
+            tree = tree.block(
+                Block::new()
+                    .borders(self.config.border.1)
+                    .border_type(border_type),
+            );
         }
+
+        frame.render_stateful_widget(tree, layout[1], &mut self.actions_state);
     }
 }
 

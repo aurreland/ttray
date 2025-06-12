@@ -3,12 +3,12 @@ use std::{
     sync::{Arc, Mutex},
 };
 
-use crate::event::{AppEvent, Event, EventHandler};
-use log::{debug, info};
-use ratatui::{
-    DefaultTerminal,
-    crossterm::event::{KeyCode, KeyEvent, KeyModifiers},
+use crate::{
+    config::Config,
+    event::{AppEvent, Event, EventHandler},
 };
+use log::{debug, info};
+use ratatui::DefaultTerminal;
 use system_tray::{
     client::{ActivateRequest, Client},
     item::StatusNotifierItem,
@@ -21,6 +21,8 @@ use tui_tree_widget::TreeState;
 pub struct App {
     /// Is the application running?
     pub running: bool,
+    /// Config.
+    pub config: Config,
     /// Event handler.
     pub events: EventHandler,
     /// System Tray Client.
@@ -35,10 +37,11 @@ pub struct App {
 
 impl App {
     /// Constructs a new instance of [`App`].
-    pub fn new(client: Client) -> Self {
+    pub fn new(client: Client, config: Config) -> Self {
         let items = client.items();
         Self {
             running: true,
+            config,
             events: EventHandler::new(client.subscribe()),
             client,
             app_index: 0,
@@ -53,7 +56,11 @@ impl App {
             terminal.draw(|frame| self.render(frame))?;
             match self.events.next().await? {
                 Event::Crossterm(event) => match event {
-                    crossterm::event::Event::Key(key_event) => self.handle_key_events(key_event)?,
+                    crossterm::event::Event::Key(key_event) => {
+                        if let Some(app_event) = self.config.get(&key_event) {
+                            self.events.send(app_event.clone());
+                        }
+                    }
                     _ => {}
                 },
                 Event::App(app_event) => match app_event {
@@ -67,28 +74,6 @@ impl App {
                 },
                 Event::SystemTray(_) => self.update(),
             }
-        }
-        Ok(())
-    }
-
-    /// Handles the key events and updates the state of [`App`].
-    pub fn handle_key_events(&mut self, key_event: KeyEvent) -> color_eyre::Result<()> {
-        match key_event.code {
-            KeyCode::Esc | KeyCode::Char('q') => self.events.send(AppEvent::Quit),
-            KeyCode::Char('c' | 'C') if key_event.modifiers == KeyModifiers::CONTROL => {
-                self.events.send(AppEvent::Quit)
-            }
-
-            KeyCode::Up | KeyCode::Char('k') => self.events.send(AppEvent::ActionPrev),
-            KeyCode::Down | KeyCode::Char('j') => self.events.send(AppEvent::ActionNext),
-
-            KeyCode::Left | KeyCode::Char('h') => self.events.send(AppEvent::AppPrev),
-            KeyCode::Right | KeyCode::Char('l') => self.events.send(AppEvent::AppNext),
-
-            KeyCode::Char(' ') => self.events.send(AppEvent::ToggleActionNode),
-            KeyCode::Enter => self.events.send(AppEvent::ActivateAction),
-
-            _ => {}
         }
         Ok(())
     }

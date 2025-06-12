@@ -1,12 +1,14 @@
 use std::fs::File;
 
 use clap::Parser;
+use config::Config;
 use log::info;
 use system_tray::client::Client;
 
 use crate::app::App;
 
 pub mod app;
+pub mod config;
 pub mod event;
 pub mod ui;
 
@@ -32,13 +34,15 @@ async fn main() -> color_eyre::Result<()> {
         )])?;
     }
 
+    let config = Config::default();
+
     let terminal = ratatui::init();
 
     info!("Starting SystemTray Client");
     let client = Client::new().await?;
 
     info!("Starting Application");
-    let result = App::new(client).run(terminal).await;
+    let result = App::new(client, config).run(terminal).await;
 
     ratatui::restore();
 
