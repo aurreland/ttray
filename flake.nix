@@ -1,44 +1,55 @@
 {
-  description = "Ttray Flake configuration";
+  description = "A Nix-flake-based Rust development environment";
 
-  inputs.nixpkgs.url = "github:nixos/nixpkgs/nixos-unstable";
+  inputs = {
+    nixpkgs.url = "https://flakehub.com/f/NixOS/nixpkgs/0.1";
+    fenix = {
+      url = "https://flakehub.com/f/nix-community/fenix/0.1";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+    crane.url = "github:ipetkov/crane";
+  };
 
-  outputs = {
-    self,
-    nixpkgs,
-  }: let
+  outputs = inputs: let
     supportedSystems = ["x86_64-linux" "aarch64-linux"];
     forEachSupportedSystem = f:
-      nixpkgs.lib.genAttrs supportedSystems (system:
+      inputs.nixpkgs.lib.genAttrs supportedSystems (system:
         f {
-          pkgs = import nixpkgs {inherit system;};
+          pkgs = import inputs.nixpkgs {
+            inherit system;
+            overlays = [
+              inputs.self.overlays.default
+            ];
+          };
         });
   in {
+    overlays.default = final: prev: {
+      rustToolchain = with inputs.fenix.packages.${prev.stdenv.hostPlatform.system};
+        combine (with stable; [
+          clippy
+          rustc
+          cargo
+          rustfmt
+          rust-src
+        ]);
+    };
+
     packages = forEachSupportedSystem ({pkgs}: {
-      default = pkgs.rustPlatform.buildRustPackage {
-        pname = "ttray";
-        version = "0.1.0";
-
-        src = ./.;
-        cargoLock = {
-          lockFile = ./Cargo.lock;
-        };
-
-        meta = {
-          description = "A Simple Tui for Tray Applications";
-          license = pkgs.lib.licenses.gpl3;
-        };
-      };
+      default = let
+        craneLib = inputs.crane.mkLib pkgs;
+      in
+        craneLib.buildPackage {src = ./.;};
     });
 
     devShells = forEachSupportedSystem ({pkgs}: {
       default = pkgs.mkShell {
         packages = with pkgs; [
-          cargo
+          rustToolchain
           rust-analyzer
         ];
 
-        env.RUST_SRC_PATH = "${pkgs.rustc}/lib/rustlib/src/rust/library";
+        # Required by rust-analyzer
+        env.RUST_SRC_PATH = "${pkgs.rustToolchain}/lib/rustlib/src/rust/library";
       };
     });
 
