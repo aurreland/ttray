@@ -30,6 +30,7 @@ pub struct App {
     /// State for the Actions Tree for selected Item
     pub actions_state: TreeState<usize>,
     /// Items from [`Client`]
+    #[allow(clippy::type_complexity)]
     items: Arc<Mutex<HashMap<String, (StatusNotifierItem, Option<TrayMenu>)>>>,
 }
 
@@ -52,10 +53,11 @@ impl App {
         while self.running {
             terminal.draw(|frame| self.render(frame))?;
             match self.events.next().await? {
-                Event::Crossterm(event) => match event {
-                    crossterm::event::Event::Key(key_event) => self.handle_key_events(key_event)?,
-                    _ => {}
-                },
+                Event::Crossterm(event) => {
+                    if let crossterm::event::Event::Key(key_event) = event {
+                        self.handle_key_events(key_event)?
+                    }
+                }
                 Event::App(app_event) => match app_event {
                     AppEvent::Quit => self.quit(),
                     AppEvent::AppPrev => self.prev_app(),
@@ -152,10 +154,7 @@ impl App {
             .values()
             .filter(|(item, _)| item.title.is_some())
             .collect::<Vec<&(StatusNotifierItem, Option<TrayMenu>)>>();
-        items
-            .get(self.app_index)
-            .map(|(_, menu)| menu.clone())
-            .flatten()
+        items.get(self.app_index).and_then(|(_, menu)| menu.clone())
     }
 
     /// Returns the maximum valid index for selecting an item.
@@ -222,7 +221,7 @@ impl App {
 
 /// Recursively finds a [`MenuItem`] by a list of indices into the nested submenu structure.
 fn find_menu_by_usize(tray_menu: &TrayMenu, ids: &[usize]) -> Option<MenuItem> {
-    if ids.len() == 0 {
+    if ids.is_empty() {
         return None;
     }
     let mut result: &MenuItem = tray_menu.submenus.get(ids[0])?;

@@ -37,8 +37,7 @@ fn menu_items_to_tree_items(menus: &[MenuItem]) -> Vec<TreeItem<usize>> {
     menus
         .iter()
         .enumerate()
-        .map(|(index, menu_item)| menu_item_to_tree_item(index, menu_item))
-        .filter_map(|x| x)
+        .filter_map(|(index, menu_item)| menu_item_to_tree_item(index, menu_item))
         .collect()
 }
 
