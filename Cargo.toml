@@ -1,7 +1,13 @@
 [package]
 name = "ttray"
 version = "0.1.0"
+authors = ["Aurélien Andreo <aurelien.andreo@proton.me>"]
 edition = "2024"
+description = "ttray is a terminal UI for viewing and managing system tray applications."
+repository = "https://github.com/aurreland/ttray"
+license = "GPL-3.0-only"
+keywords = ["terminal", "tui", "tray", "system-tray", "linux"]
+exclude = [".envrc", ".github/", ".gitignore", "flake.nix", "flake.lock"]
 
 [dependencies]
 crossterm = { version = "0.28.1", features = ["event-stream"] }
